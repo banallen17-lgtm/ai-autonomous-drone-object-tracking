@@ -95,6 +95,38 @@ ai-autonomous-drone-object-tracking/
 
 Project started. The first stage focuses on research, planning, simulation setup, GitHub documentation, and safe hardware selection.
 
+## Milestone 1: Real-Time Object Detection
+
+Successfully implemented a real-time object detection pipeline using a USB Arducam and the YOLOv8 object detection model.
+
+### Features
+
+* Live video feed from external USB camera
+* Real-time object detection
+* Automatic bounding box generation
+* Object classification using pretrained YOLOv8
+
+### Detected Objects
+
+* Person
+* Bottle
+* Cell Phone
+
+### Technologies Used
+
+* Python
+* OpenCV
+* Ultralytics YOLOv8
+* Arducam USB Camera
+
+### Future Work
+
+* Object tracking
+* Target selection
+* Autonomous target following
+* Drone integration
+
+
 ## Safety and Ethics
 
 This project will focus on tracking assigned non-human objects in controlled environments. Human face recognition and privacy-invasive surveillance will not be used as the main demonstration. All testing will include manual override, safe flight boundaries, and controlled indoor or approved outdoor environments.
