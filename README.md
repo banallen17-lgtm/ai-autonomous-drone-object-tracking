@@ -1,5 +1,3 @@
-# ai-autonomous-drone-object-tracking
-
 # AI Autonomous Drone for Real-Time Object Tracking and 3D-Aware Navigation
 
 ## Project Overview
