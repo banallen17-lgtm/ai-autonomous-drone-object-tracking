@@ -99,18 +99,23 @@ Project started. The first stage focuses on research, planning, simulation setup
 
 Successfully implemented a real-time object detection pipeline using a USB Arducam and the YOLOv8 object detection model.
 
+## Results
+
+| Object Detection Demo |
+|----------------------|
+| ![](assets/yolo_detection_demo.png) |
+
+Detected objects:
+- Person
+- Bottle
+- Cell Phone
+
 ### Features
 
 * Live video feed from external USB camera
 * Real-time object detection
 * Automatic bounding box generation
 * Object classification using pretrained YOLOv8
-
-### Detected Objects
-
-* Person
-* Bottle
-* Cell Phone
 
 ### Technologies Used
 
