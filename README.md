@@ -131,6 +131,73 @@ Detected objects:
 * Autonomous target following
 * Drone integration
 
+## Milestone 2: Target Tracking and Motion Prediction
+
+Successfully expanded the object detection pipeline into a target tracking system capable of selecting and following a specific object across multiple frames.
+
+The system automatically identifies a cell phone, assigns it as the target, predicts future target positions using a Kalman Filter, and provides directional guidance relative to the center of the camera frame.
+
+## Results
+
+| Target Tracking Demo                 |
+| ------------------------------------ |
+| ![](assets/tracking_prediction_demo.png) |
+
+### Features
+
+* Automatic target selection
+* Multi-object tracking using ByteTrack
+* Unique object ID assignment
+* Kalman Filter motion prediction
+* Real-time target position estimation
+* Directional guidance system
+* Target re-identification attempts
+* Live camera visualization
+
+### Example Output
+
+```text
+Target selected: Cell Phone ID 7
+
+Target Center: (415, 228)
+Predicted Error X: 42, Y: -18
+
+MOVE RIGHT | CENTERED Y
+```
+
+### Technologies Used
+
+* Python
+* OpenCV
+* Ultralytics YOLOv8
+* ByteTrack
+* Kalman Filters
+* NumPy
+
+### Challenges Encountered
+
+* Target identity loss during rapid motion
+* Motion blur affecting object detection
+* ByteTrack reassigning new IDs after occlusion
+* Kalman prediction drift during long target loss periods
+
+### Lessons Learned
+
+* Object detection and object tracking are fundamentally different problems
+* Kalman Filters improve stability but do not solve identity tracking
+* Multi-object trackers are susceptible to ID switching
+* Robust tracking requires combining detection, tracking, prediction, and re-identification
+
+### Future Work
+
+* CSRT visual tracker integration
+* Appearance-based target re-identification
+* High-speed target tracking improvements
+* Target tracking under occlusion
+* Drone control system integration
+
+
+
 
 ## Safety and Ethics
 
