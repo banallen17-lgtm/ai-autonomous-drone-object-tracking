@@ -146,18 +146,19 @@ The system automatically identifies a cell phone, assigns it as the target, pred
 ### Features
 
 * Automatic target selection
-* Multi-object tracking using ByteTrack
-* Unique object ID assignment
+* Hybrid YOLO + CSRT tracking architecture
 * Kalman Filter motion prediction
 * Real-time target position estimation
 * Directional guidance system
-* Target re-identification attempts
+* Visual target persistence
+* Automatic target reacquisition
+* Reduced identity switching
 * Live camera visualization
 
 ### Example Output
 
 ```text
-Target selected: Cell Phone ID 7
+Target selected: Cell Phone
 
 Target Center: (415, 228)
 Predicted Error X: 42, Y: -18
@@ -194,9 +195,80 @@ MOVE RIGHT | CENTERED Y
 * Appearance-based target re-identification
 * High-speed target tracking improvements
 * Target tracking under occlusion
+* Simulation-based testing environment
 * Drone control system integration
 
+## Milestone 3: Autonomous Drone Tracking Simulation
 
+Developed a simulation environment to evaluate autonomous target tracking behavior before physical drone deployment.
+
+The simulation models a drone tracking moving targets using vision constraints, tracking confidence, target selection logic, and autonomous pursuit behavior. Multiple targets can exist simultaneously, allowing the drone to select and maintain lock on a specific target while ignoring distractions.
+
+## Results
+
+| Autonomous Drone Simulation           |
+| ------------------------------------- |
+| ![](assets/drone_simulation_demo.png) |
+
+### Features
+
+* Autonomous target following
+* Target lock maintenance
+* Configurable follow distance
+* Search and reacquisition behavior
+* Camera field-of-view simulation
+* Vision radius constraints
+* Tracking confidence system
+* Target evasion behavior
+* Multi-target environment
+* Persistent target selection
+
+### Example Behaviors
+
+```text
+Target detected
+↓
+Target selected
+↓
+Drone tracks target
+↓
+Target leaves field of view
+↓
+Drone searches
+↓
+Target reacquired
+```
+
+### Technologies Used
+
+* Python
+* OpenCV
+* NumPy
+* State-Based Control Logic
+* Autonomous Tracking Algorithms
+
+### Challenges Encountered
+
+* Designing realistic autonomous behavior
+* Implementing search and reacquisition states
+* Managing target selection in multi-target environments
+* Balancing tracking aggressiveness with follow distance constraints
+
+### Lessons Learned
+
+* Tracking a target and controlling a vehicle are fundamentally different challenges
+* Autonomous systems require state management beyond simple tracking
+* Target selection and persistence are critical for multi-object environments
+* Simulation provides a safe environment for validating autonomy algorithms before hardware deployment
+
+### Future Work
+
+* Target memory and advanced reacquisition logic
+* Multi-target prioritization
+* Threat and importance scoring systems
+* 3D simulation using PyBullet
+* Integration with the real YOLO-CSRT tracking pipeline
+* Physical drone implementation
 
 
 ## Safety and Ethics

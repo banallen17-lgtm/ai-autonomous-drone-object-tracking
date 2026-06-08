@@ -44,4 +44,14 @@ Each time I work on the project, I will record:
 * What I learned: Learned how multi-object tracking systems maintain object identity, how Kalman Filters estimate future object positions, and the limitations of ID-based tracking systems. Discovered that robust autonomous tracking requires combining object detection, visual tracking, motion prediction, and target re-identification techniques.
 * Next step: Replace reliance on ByteTrack IDs with a hybrid tracking architecture using YOLOv8, CSRT visual tracking, and Kalman prediction to create a more robust target-following system suitable for future drone deployment.
 
+## Entry 4
+
+* Date: 6/8/2026
+* Goal: Improve object tracking reliability and begin autonomous drone simulation development.
+* What I did: Replaced ID-dependent tracking with a hybrid YOLO + CSRT tracking architecture. Improved target persistence through visual tracking and Kalman prediction. Implemented virtual drone control commands and developed a 2D autonomous drone simulation environment. Added vision radius, search mode, target reacquisition, target evasion behavior, camera field of view limitations, confidence tracking, and multi-target tracking capabilities.
+* What worked: The CSRT tracker significantly improved tracking stability compared to relying solely on ByteTrack IDs. The drone simulation successfully demonstrated autonomous target following, search behavior, target reacquisition, and persistent target locking in a multi-target environment. The bird evasion system created a more realistic tracking scenario.
+* What failed: Initial simulation attempts used perfect target information, making the environment unrealistic. Multi-target implementation required restructuring portions of the simulation and revealed issues with target selection and variable management. Several debugging iterations were needed to correctly integrate target locking.
+* What I learned: Real-world tracking systems require more than object detection. Maintaining target identity, handling target loss, and reacquiring targets are major challenges in autonomous systems. I also learned how tracking, control systems, and autonomous decision-making interact within a robotics pipeline.
+* Next step: Implement target memory and target reacquisition logic for multi-target environments. Begin designing a higher-fidelity simulation architecture and prepare for future 3D simulation using PyBullet.
+
 
