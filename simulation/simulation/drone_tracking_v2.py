@@ -34,6 +34,10 @@ FOLLOW_DISTANCE = 150
 # BIRD
 # ------------------
 
+BIRD_NORMAL_SPEED = 3
+BIRD_ESCAPE_SPEED = 6
+BIRD_DETECTION_RADIUS = 220
+
 bird_x = 900.0
 bird_y = 400.0
 
@@ -56,18 +60,32 @@ while True:
     # BIRD AI
     # ------------------
 
-    direction_timer += 1
+    bird_error_x = bird_x - drone_x
+    bird_error_y = bird_y - drone_y
+    bird_distance_from_drone = math.sqrt(bird_error_x**2 + bird_error_y**2)
 
-    if direction_timer > 60:
+    if bird_distance_from_drone < BIRD_DETECTION_RADIUS:
+        escape_x = bird_error_x / bird_distance_from_drone
+        escape_y = bird_error_y / bird_distance_from_drone
 
-        bird_vx += random.uniform(-2, 2)
-        bird_vy += random.uniform(-2, 2)
+        bird_vx += escape_x * 0.3
+        bird_vy += escape_y * 0.3
 
-        bird_vx = max(-5, min(5, bird_vx))
-        bird_vy = max(-5, min(5, bird_vy))
+        bird_vx = max(-BIRD_ESCAPE_SPEED, min(BIRD_ESCAPE_SPEED, bird_vx))
+        bird_vy = max(-BIRD_ESCAPE_SPEED, min(BIRD_ESCAPE_SPEED, bird_vy))
+    else:
+        direction_timer += 1
 
-        direction_timer = 0
+        if direction_timer > 60:
+            bird_vx += random.uniform(-1.5, 1.5)
+            bird_vy += random.uniform(-1.5, 1.5)
 
+            bird_vx = max(-BIRD_NORMAL_SPEED, min(BIRD_NORMAL_SPEED, bird_vx))
+            bird_vy = max(-BIRD_NORMAL_SPEED, min(BIRD_NORMAL_SPEED, bird_vy))
+
+            direction_timer = 0
+
+    bird_state = "EVADING" if bird_distance_from_drone < BIRD_DETECTION_RADIUS else "NORMAL"
     bird_x += bird_vx
     bird_y += bird_vy
 
@@ -87,6 +105,15 @@ while True:
         bird_y = HEIGHT - 50
         bird_vy *= -1
 
+    cv2.putText(
+        canvas,
+        f"Bird State: {bird_state}",
+        (20, 210),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.8,
+        (0, 165, 255),
+        2
+    )
     # ------------------
     # DRONE TRACKING
     # ------------------
@@ -150,6 +177,13 @@ while True:
     # ------------------
     # DRAW BIRD
     # ------------------
+    cv2.circle(
+        canvas,
+        (int(bird_x), int(bird_y)),
+        15,
+        (0, 0, 255),
+        -1
+    )
 
     cv2.circle(
         canvas,
