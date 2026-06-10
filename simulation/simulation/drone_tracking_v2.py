@@ -3,15 +3,32 @@ import numpy as np
 import random
 import math
 
+
+# ------------------
+# HELPER FUNCTIONS
+# ------------------
+
 def clamp(value, min_value, max_value):
     return max(min_value, min(value, max_value))
+
+
+def normalize_angle(angle):
+    while angle > math.pi:
+        angle -= 2 * math.pi
+
+    while angle < -math.pi:
+        angle += 2 * math.pi
+
+    return angle
+
 
 # ------------------
 # WINDOW
 # ------------------
 
-WIDTH = 1200
-HEIGHT = 800
+WIDTH = 1600
+HEIGHT = 1100
+
 
 # ------------------
 # DRONE
@@ -23,22 +40,34 @@ drone_y = 400.0
 drone_vx = 0.0
 drone_vy = 0.0
 
-MAX_SPEED = 8
+MAX_SPEED = 10
 ACCELERATION = 0.25
 FRICTION = 0.98
 
 drone_heading = 0
 
 LOCK_RADIUS = 40
-VISION_RADIUS = 400
+VISION_RADIUS = 600
 FOLLOW_DISTANCE = 150
 FOV_ANGLE = 90
 TURN_SPEED = 0.04
+
 tracking_confidence = 0.0
 locked_target_id = None
 
+last_known_x = None
+last_known_y = None
+memory_timer = 0
+MAX_MEMORY_TIME = 300
+SEARCH_ORBIT_RADIUS = 120
+
+reacquire_timer = 0
+REACQUIRE_DISPLAY_TIME = 60
+was_target_detected = False
+
+
 # ------------------
-# BIRD
+# BIRDS
 # ------------------
 
 BIRD_NORMAL_SPEED = 3
@@ -48,25 +77,25 @@ BIRD_DETECTION_RADIUS = 220
 birds = []
 
 for i in range(3):
-
     birds.append({
         "id": i,
         "x": random.randint(300, WIDTH - 100),
         "y": random.randint(100, HEIGHT - 100),
         "vx": random.uniform(-3, 3),
         "vy": random.uniform(-3, 3),
+        "direction_timer": 0,
     })
 
-direction_timer = 0
+
 target_detected = False
 search_mode = False
+
 
 # ------------------
 # MAIN LOOP
 # ------------------
 
 while True:
-
     canvas = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
 
     # ------------------
@@ -92,53 +121,219 @@ while True:
             target_bird = bird
             break
 
+    if target_bird is None:
+        print("Error: No target bird found.")
+        break
+
     # ------------------
     # BIRD AI
     # ------------------
 
-    bird_error_x = target_bird["x"] - drone_x
-    bird_error_y = target_bird["y"] - drone_y
-    bird_distance_from_drone = math.sqrt(bird_error_x**2 + bird_error_y**2)
+    for bird in birds:
+        bird_error_x = bird["x"] - drone_x
+        bird_error_y = bird["y"] - drone_y
+        bird_distance_from_drone = math.sqrt(bird_error_x**2 + bird_error_y**2)
 
-    if bird_distance_from_drone < BIRD_DETECTION_RADIUS:
-        escape_x = bird_error_x / bird_distance_from_drone
-        escape_y = bird_error_y / bird_distance_from_drone
+        if bird_distance_from_drone < BIRD_DETECTION_RADIUS and bird_distance_from_drone > 0:
+            escape_x = bird_error_x / bird_distance_from_drone
+            escape_y = bird_error_y / bird_distance_from_drone
 
-        target_bird["vx"] += escape_x * 0.3
-        target_bird["vy"] += escape_y * 0.3
+            bird["vx"] += escape_x * 0.3
+            bird["vy"] += escape_y * 0.3
 
-        target_bird["vx"] = max(-BIRD_ESCAPE_SPEED, min(BIRD_ESCAPE_SPEED, target_bird["vx"]))
-        target_bird["vy"] = max(-BIRD_ESCAPE_SPEED, min(BIRD_ESCAPE_SPEED, target_bird["vy"]))
-    else:
-        direction_timer += 1
+            bird["vx"] = clamp(bird["vx"], -BIRD_ESCAPE_SPEED, BIRD_ESCAPE_SPEED)
+            bird["vy"] = clamp(bird["vy"], -BIRD_ESCAPE_SPEED, BIRD_ESCAPE_SPEED)
 
-        if direction_timer > 60:
-            target_bird["vx"] += random.uniform(-1.5, 1.5)
-            target_bird["vy"] += random.uniform(-1.5, 1.5)
+        else:
+            bird["direction_timer"] += 1
 
-            target_bird["vx"] = max(-BIRD_NORMAL_SPEED, min(BIRD_NORMAL_SPEED, target_bird["vx"]))
-            target_bird["vy"] = max(-BIRD_NORMAL_SPEED, min(BIRD_NORMAL_SPEED, target_bird["vy"]))
+            if bird["direction_timer"] > 60:
+                bird["vx"] += random.uniform(-1.5, 1.5)
+                bird["vy"] += random.uniform(-1.5, 1.5)
 
-            direction_timer = 0
+                bird["vx"] = clamp(bird["vx"], -BIRD_NORMAL_SPEED, BIRD_NORMAL_SPEED)
+                bird["vy"] = clamp(bird["vy"], -BIRD_NORMAL_SPEED, BIRD_NORMAL_SPEED)
 
-    bird_state = "EVADING" if bird_distance_from_drone < BIRD_DETECTION_RADIUS else "NORMAL"
-   
-    cv2.putText(
-        canvas,
-        f"Bird State: {bird_state}",
-        (20, 210),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.8,
-        (0, 165, 255),
-        2
-    )
+                bird["direction_timer"] = 0
 
-    if locked_target_id is None:
-
-        closest_distance = float("inf")
+    # ------------------
+    # MOVE ALL BIRDS
+    # ------------------
 
     for bird in birds:
+        bird["x"] += bird["vx"]
+        bird["y"] += bird["vy"]
 
+        if bird["x"] < 50:
+            bird["x"] = 50
+            bird["vx"] *= -1
+
+        if bird["x"] > WIDTH - 50:
+            bird["x"] = WIDTH - 50
+            bird["vx"] *= -1
+
+        if bird["y"] < 50:
+            bird["y"] = 50
+            bird["vy"] *= -1
+
+        if bird["y"] > HEIGHT - 50:
+            bird["y"] = HEIGHT - 50
+            bird["vy"] *= -1
+
+    # ------------------
+    # DRONE TRACKING
+    # ------------------
+
+    error_x = target_bird["x"] - drone_x
+    error_y = target_bird["y"] - drone_y
+
+    distance = math.sqrt(error_x**2 + error_y**2)
+
+    angle_to_target = math.atan2(
+        target_bird["y"] - drone_y,
+        target_bird["x"] - drone_x
+    )
+
+    angle_difference = normalize_angle(
+        angle_to_target - drone_heading
+    )
+
+    target_in_fov = (
+        abs(angle_difference)
+        < math.radians(FOV_ANGLE / 2)
+    )
+
+    visible_now = (
+        distance <= VISION_RADIUS
+        and target_in_fov
+    )
+
+    if visible_now:
+        tracking_confidence += 0.03
+
+        last_known_x = target_bird["x"]
+        last_known_y = target_bird["y"]
+        memory_timer = 0
+
+    else:
+        tracking_confidence -= 0.05
+
+    tracking_confidence = clamp(tracking_confidence, 0.0, 1.0)
+
+    target_detected = tracking_confidence > 0.25
+
+    if not target_detected:
+        memory_timer += 1
+
+    if target_detected and not was_target_detected:
+        reacquire_timer = REACQUIRE_DISPLAY_TIME
+
+    was_target_detected = target_detected
+
+    if reacquire_timer > 0:
+        reacquire_timer -= 1
+
+    if target_detected:
+        status = "TRACKING"
+
+    elif last_known_x is not None and memory_timer < MAX_MEMORY_TIME:
+        status = "REACQUIRING"
+
+    else:
+        status = "SEARCHING"
+
+    distance_error = distance - FOLLOW_DISTANCE
+
+    # ------------------
+    # DRONE MOVEMENT LOGIC
+    # ------------------
+
+    if target_detected and distance > 0 and abs(distance_error) > 20:
+        direction_x = error_x / distance
+        direction_y = error_y / distance
+
+        control_strength = distance_error / FOLLOW_DISTANCE
+
+        drone_vx += direction_x * ACCELERATION * control_strength
+        drone_vy += direction_y * ACCELERATION * control_strength
+
+    elif status == "REACQUIRING" and last_known_x is not None:
+        mem_error_x = last_known_x - drone_x
+        mem_error_y = last_known_y - drone_y
+
+        mem_distance = math.sqrt(mem_error_x**2 + mem_error_y**2)
+
+        if mem_distance > SEARCH_ORBIT_RADIUS:
+            mem_dir_x = mem_error_x / mem_distance
+            mem_dir_y = mem_error_y / mem_distance
+
+            drone_vx += mem_dir_x * ACCELERATION
+            drone_vy += mem_dir_y * ACCELERATION
+
+        else:
+            drone_heading += TURN_SPEED * 2
+
+    else:
+        drone_heading += TURN_SPEED
+
+    # ------------------
+    # SPEED LIMIT + FRICTION
+    # ------------------
+
+    speed = math.sqrt(drone_vx**2 + drone_vy**2)
+
+    if speed > MAX_SPEED:
+        scale = MAX_SPEED / speed
+        drone_vx *= scale
+        drone_vy *= scale
+
+    drone_vx *= FRICTION
+    drone_vy *= FRICTION
+
+    drone_x += drone_vx
+    drone_y += drone_vy
+
+    # ------------------
+    # DRONE HEADING
+    # ------------------
+
+    if target_detected:
+        angle_to_target = math.atan2(
+            target_bird["y"] - drone_y,
+            target_bird["x"] - drone_x
+        )
+
+        angle_error = normalize_angle(
+            angle_to_target - drone_heading
+        )
+
+        drone_heading += clamp(
+            angle_error,
+            -TURN_SPEED,
+            TURN_SPEED
+        )
+
+    elif status == "REACQUIRING" and last_known_x is not None:
+        angle_to_memory = math.atan2(
+            last_known_y - drone_y,
+            last_known_x - drone_x
+        )
+
+        angle_error = normalize_angle(
+            angle_to_memory - drone_heading
+        )
+
+        drone_heading += clamp(
+            angle_error,
+            -TURN_SPEED,
+            TURN_SPEED
+        )
+
+    # ------------------
+    # DRAW ALL BIRDS
+    # ------------------
+
+    for bird in birds:
         color = (0, 0, 255)
 
         if bird["id"] == locked_target_id:
@@ -162,128 +357,9 @@ while True:
             2
         )
 
-        for bird in birds:
-            bird["x"] += bird["vx"]
-            bird["y"] += bird["vy"]
-
-            if bird["x"] < 50:
-                bird["x"] = 50
-                bird["vx"] *= -1
-
-            if bird["x"] > WIDTH - 50:
-                bird["x"] = WIDTH - 50
-                bird["vx"] *= -1
-
-            if bird["y"] < 50:
-                bird["y"] = 50
-                bird["vy"] *= -1
-
-            if bird["y"] > HEIGHT - 50:
-                bird["y"] = HEIGHT - 50
-                bird["vy"] *= -1
-    
     # ------------------
-    # DRONE TRACKING
+    # FOLLOW DISTANCE CIRCLE
     # ------------------
-
-    def normalize_angle(angle):
-        while angle > math.pi:
-            angle -= 2 * math.pi
-
-        while angle < -math.pi:
-            angle += 2 * math.pi
-
-        return angle
-
-    error_x = target_bird["x"] - drone_x
-    error_y = target_bird["y"] - drone_y
-
-    distance = math.sqrt(error_x**2 + error_y**2)
-
-    angle_to_target = math.atan2(
-        target_bird["y"] - drone_y,
-        target_bird["x"] - drone_x
-    )
-
-    angle_difference = normalize_angle(
-        angle_to_target - drone_heading
-    )
-
-    target_in_fov = (
-        abs(angle_difference)
-        < math.radians(FOV_ANGLE / 2)
-    )
-
-    if (
-        distance <= VISION_RADIUS
-        and target_in_fov
-    ):
-        target_detected = True
-        search_mode = False
-    else:
-        target_detected = False
-        search_mode = True
-
-    if distance <= VISION_RADIUS and target_in_fov:
-        tracking_confidence += 0.03
-    else:
-        tracking_confidence -= 0.05
-
-    tracking_confidence = clamp(tracking_confidence, 0.0, 1.0)
-
-    target_detected = tracking_confidence > 0.25
-
-    status = "TRACKING" if target_detected else "SEARCHING"
-
-    distance_error = distance - FOLLOW_DISTANCE
-
-    if target_detected and abs(distance_error) > 20:
-
-        direction_x = error_x / distance
-        direction_y = error_y / distance
-
-        control_strength = distance_error / FOLLOW_DISTANCE
-
-        drone_vx += direction_x * ACCELERATION * control_strength
-        drone_vy += direction_y * ACCELERATION * control_strength
-
-    speed = math.sqrt(drone_vx**2 + drone_vy**2)
-
-    if speed > MAX_SPEED:
-
-        scale = MAX_SPEED / speed
-
-        drone_vx *= scale
-        drone_vy *= scale
-
-    drone_vx *= FRICTION
-    drone_vy *= FRICTION
-
-    drone_x += drone_vx
-    drone_y += drone_vy
-
-    # ------------------
-    # DRONE HEADING
-    # ------------------
-
-    angle_to_target = math.atan2(target_bird["y"] - drone_y, target_bird["x"] - drone_x)
-    angle_error = normalize_angle(angle_to_target - drone_heading)
-
-    if target_detected:
-        drone_heading += clamp(angle_error, -TURN_SPEED, TURN_SPEED)
-    else:
-        drone_heading += TURN_SPEED
-
-    # ------------------
-    # DRAW BIRD
-    # ------------------
-    cv2.circle(
-        canvas,
-        (int(target_bird["x"]), int(target_bird["y"])),
-        15,
-        (0, 0, 255),
-        -1
-    )
 
     cv2.circle(
         canvas,
@@ -293,15 +369,9 @@ while True:
         1
     )
 
-    cv2.putText(
-        canvas,
-        "BIRD",
-        (int(target_bird["x"]) + 20, int(target_bird["y"])),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.6,
-        (0, 0, 255),
-        2
-    )
+    # ------------------
+    # VISION RADIUS
+    # ------------------
 
     cv2.circle(
         canvas,
@@ -310,6 +380,29 @@ while True:
         (60, 60, 60),
         1
     )
+
+    # ------------------
+    # LAST KNOWN POSITION
+    # ------------------
+
+    if last_known_x is not None and not target_detected:
+        cv2.circle(
+            canvas,
+            (int(last_known_x), int(last_known_y)),
+            25,
+            (255, 255, 0),
+            2
+        )
+
+        cv2.putText(
+            canvas,
+            "LAST SEEN",
+            (int(last_known_x) + 10, int(last_known_y) - 10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255, 255, 0),
+            2
+        )
 
     # ------------------
     # DRAW CAMERA FOV
@@ -371,11 +464,18 @@ while True:
     # TRACKING LINE
     # ------------------
 
+    if target_detected:
+        line_color = (0, 255, 0)
+    elif status == "REACQUIRING":
+        line_color = (255, 255, 0)
+    else:
+        line_color = (80, 80, 80)
+
     cv2.line(
         canvas,
         (int(drone_x), int(drone_y)),
         (int(target_bird["x"]), int(target_bird["y"])),
-        (0, 255, 0),
+        line_color,
         2
     )
 
@@ -383,8 +483,7 @@ while True:
     # TARGET LOCK
     # ------------------
 
-    if distance < LOCK_RADIUS:
-
+    if distance < LOCK_RADIUS and target_detected:
         cv2.putText(
             canvas,
             "TARGET LOCKED",
@@ -404,8 +503,28 @@ while True:
         )
 
     # ------------------
+    # TARGET REACQUIRED MESSAGE
+    # ------------------
+
+    if reacquire_timer > 0:
+        cv2.putText(
+            canvas,
+            "TARGET REACQUIRED",
+            (430, 110),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1.0,
+            (0, 255, 0),
+            3
+        )
+
+    # ------------------
     # HUD
     # ------------------
+
+    bird_state = "EVADING" if math.sqrt(
+        (target_bird["x"] - drone_x) ** 2
+        + (target_bird["y"] - drone_y) ** 2
+    ) < BIRD_DETECTION_RADIUS else "NORMAL"
 
     cv2.putText(
         canvas,
@@ -413,7 +532,47 @@ while True:
         (20, 40),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.8,
-        (255,255,255),
+        (255, 255, 255),
+        2
+    )
+
+    cv2.putText(
+        canvas,
+        f"Velocity: {speed:.2f}",
+        (20, 80),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.8,
+        (255, 255, 255),
+        2
+    )
+
+    cv2.putText(
+        canvas,
+        "AUTONOMOUS DRONE TRACKING V7",
+        (20, 130),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.9,
+        (255, 255, 255),
+        2
+    )
+
+    cv2.putText(
+        canvas,
+        f"Status: {status}",
+        (20, 170),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.9,
+        (0, 255, 255),
+        2
+    )
+
+    cv2.putText(
+        canvas,
+        f"Bird State: {bird_state}",
+        (20, 210),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.8,
+        (0, 165, 255),
         2
     )
 
@@ -429,42 +588,48 @@ while True:
 
     cv2.putText(
         canvas,
-        f"Velocity: {speed:.2f}",
-        (20, 80),
+        f"Locked Target: Bird {locked_target_id}",
+        (20, 290),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.8,
-        (255,255,255),
+        (0, 255, 255),
         2
     )
 
     cv2.putText(
         canvas,
-        "AUTONOMOUS DRONE TRACKING V2",
-        (20, 130),
+        f"Memory Timer: {memory_timer}/{MAX_MEMORY_TIME}",
+        (20, 330),
         cv2.FONT_HERSHEY_SIMPLEX,
-        0.9,
-        (255,255,255),
-        2
-    )
-
-    cv2.putText(
-        canvas,
-        f"Status: {status}",
-        (20, 170),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.9,
-        (0,255,255),
+        0.8,
+        (255, 255, 0),
         2
     )
 
     cv2.imshow(
-        "Autonomous Drone Tracking V2",
+        "Autonomous Drone Tracking V7",
         canvas
     )
 
-    key = cv2.waitKey(20)
+    key = cv2.waitKey(20) & 0xFF
 
     if key == ord("q"):
         break
+
+    elif key in [ord("0"), ord("1"), ord("2")]:
+        selected_id = int(chr(key))
+
+        valid_ids = [bird["id"] for bird in birds]
+
+        if selected_id in valid_ids:
+            locked_target_id = selected_id
+            tracking_confidence = 0.0
+            last_known_x = None
+            last_known_y = None
+            memory_timer = 0
+            reacquire_timer = 0
+            was_target_detected = False
+
+            print(f"Manual target selected: Bird {locked_target_id}")
 
 cv2.destroyAllWindows()
