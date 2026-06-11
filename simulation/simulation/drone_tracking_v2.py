@@ -45,6 +45,10 @@ ACCELERATION = 0.25
 FRICTION = 0.98
 
 drone_heading = 0
+camera_heading = 0
+
+CAMERA_TURN_SPEED = 0.07
+CAMERA_FOV = 60
 
 LOCK_RADIUS = 40
 VISION_RADIUS = 600
@@ -64,6 +68,11 @@ SEARCH_ORBIT_RADIUS = 120
 reacquire_timer = 0
 REACQUIRE_DISPLAY_TIME = 60
 was_target_detected = False
+
+last_angle_error = 0.0
+search_direction = 1
+SEARCH_MOVE_RADIUS = 150
+SEARCH_TANGENTIAL_SPEED = 0.18
 
 
 # ------------------
@@ -195,12 +204,12 @@ while True:
     )
 
     angle_difference = normalize_angle(
-        angle_to_target - drone_heading
+        angle_to_target - camera_heading
     )
 
     target_in_fov = (
         abs(angle_difference)
-        < math.radians(FOV_ANGLE / 2)
+        < math.radians(CAMERA_FOV / 2)
     )
 
     visible_now = (
@@ -214,6 +223,13 @@ while True:
         last_known_x = target_bird["x"]
         last_known_y = target_bird["y"]
         memory_timer = 0
+
+        last_angle_error = angle_difference
+
+        if angle_difference > 0:
+            search_direction = 1
+        else:
+            search_direction = -1
 
     else:
         tracking_confidence -= 0.05
@@ -257,24 +273,8 @@ while True:
         drone_vx += direction_x * ACCELERATION * control_strength
         drone_vy += direction_y * ACCELERATION * control_strength
 
-    elif status == "REACQUIRING" and last_known_x is not None:
-        mem_error_x = last_known_x - drone_x
-        mem_error_y = last_known_y - drone_y
-
-        mem_distance = math.sqrt(mem_error_x**2 + mem_error_y**2)
-
-        if mem_distance > SEARCH_ORBIT_RADIUS:
-            mem_dir_x = mem_error_x / mem_distance
-            mem_dir_y = mem_error_y / mem_distance
-
-            drone_vx += mem_dir_x * ACCELERATION
-            drone_vy += mem_dir_y * ACCELERATION
-
-        else:
-            drone_heading += TURN_SPEED * 2
-
     else:
-        drone_heading += TURN_SPEED
+        pass
 
     # ------------------
     # SPEED LIMIT + FRICTION
@@ -303,28 +303,61 @@ while True:
             target_bird["x"] - drone_x
         )
 
-        angle_error = normalize_angle(
-            angle_to_target - drone_heading
+        camera_error = normalize_angle(angle_to_target - camera_heading)
+
+        camera_heading += clamp(
+            camera_error,
+            -CAMERA_TURN_SPEED,
+            CAMERA_TURN_SPEED
         )
 
+        body_error = normalize_angle(camera_heading - drone_heading)
+
         drone_heading += clamp(
-            angle_error,
+            body_error,
             -TURN_SPEED,
             TURN_SPEED
         )
 
     elif status == "REACQUIRING" and last_known_x is not None:
-        angle_to_memory = math.atan2(
-            last_known_y - drone_y,
-            last_known_x - drone_x
-        )
+        mem_error_x = last_known_x - drone_x
+        mem_error_y = last_known_y - drone_y
+        mem_distance = math.sqrt(mem_error_x**2 + mem_error_y**2)
 
-        angle_error = normalize_angle(
-            angle_to_memory - drone_heading
-        )
+        # Move toward last known location if far away
+        if mem_distance > SEARCH_MOVE_RADIUS:
+            mem_dir_x = mem_error_x / mem_distance
+            mem_dir_y = mem_error_y / mem_distance
+
+            drone_vx += mem_dir_x * ACCELERATION * 1.2
+            drone_vy += mem_dir_y * ACCELERATION * 1.2
+
+        # If near last known location, orbit/search around it
+        else:
+            orbit_x = -mem_error_y / max(mem_distance, 1)
+            orbit_y = mem_error_x / max(mem_distance, 1)
+
+            drone_vx += orbit_x * SEARCH_TANGENTIAL_SPEED
+            drone_vy += orbit_y * SEARCH_TANGENTIAL_SPEED
+
+    else:
+        camera_heading += search_direction * CAMERA_TURN_SPEED
+
+        body_error = normalize_angle(camera_heading - drone_heading)
 
         drone_heading += clamp(
-            angle_error,
+            body_error,
+            -TURN_SPEED,
+            TURN_SPEED
+        )
+        # Camera searches in the direction target was lost
+        camera_heading += search_direction * CAMERA_TURN_SPEED
+
+        # Drone body slowly follows camera direction
+        body_error = normalize_angle(camera_heading - drone_heading)
+
+        drone_heading += clamp(
+            body_error,
             -TURN_SPEED,
             TURN_SPEED
         )
@@ -408,8 +441,8 @@ while True:
     # DRAW CAMERA FOV
     # ------------------
 
-    left_angle = drone_heading - math.radians(FOV_ANGLE / 2)
-    right_angle = drone_heading + math.radians(FOV_ANGLE / 2)
+    left_angle = camera_heading - math.radians(CAMERA_FOV / 2)
+    right_angle = camera_heading + math.radians(CAMERA_FOV / 2)
 
     left_x = drone_x + math.cos(left_angle) * VISION_RADIUS
     left_y = drone_y + math.sin(left_angle) * VISION_RADIUS
