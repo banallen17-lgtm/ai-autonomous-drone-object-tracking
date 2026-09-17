@@ -1,65 +1,29 @@
 # Object Tracking Plan
 
-## Goal
+## Current baseline
 
-The goal of this stage is to build a camera-based AI vision system that can detect and track a selected object in real time.
+[The primary tracker](../vision/object_detection/yolo_tracking.py) acquires a cell phone with YOLOv8, follows its bounding box with CSRT, predicts its center with a Kalman filter, and displays virtual movement indications. Earlier ByteTrack work is recorded in the [research log](research_log.md).
 
-## First Target
+The current default target is a cell phone. Alternative non-human objects or markers can be evaluated later. Color/ArUco tracking was an initial proposal, not the current implementation.
 
-The first target should be a simple non-human object, such as:
+## Repair priorities
 
-- colored box
-- water bottle
-- toy car
-- backpack
-- ArUco marker
-- AprilTag marker
+1. Resolve OpenCV dependency overlap and verify CSRT in a fresh environment.
+2. Separate observed, predicted, lost, and searching states.
+3. Gate reacquisition so a distant same-class detection is not automatically accepted.
+4. Account for elapsed time and limit stale prediction use.
+5. Reset filter uncertainty and virtual center consistently.
+6. Extract import-safe processing and guarantee capture/window cleanup.
+7. Make camera/video source and model settings configurable.
 
-## Tracking Options
+## Evaluation
 
-### Option 1: OpenCV Color Tracking
+Use recorded inputs with known target locations, including slow movement, rapid movement, temporary occlusion, target exit/reentry, and a second object of the same class.
 
-Pros:
-- Simple
-- Fast
-- Good for first prototype
+Record center error, FPS/latency, lost duration, successful reacquisition, and identity switches. Compare identical clips before and after changes. Include reset and pause/resume behavior.
 
-Cons:
-- Sensitive to lighting
-- Only works well with clear colors
+Success means repeatable results with explicit tracking validity. Numerical performance thresholds should be set after baseline measurements; no accuracy or FPS guarantee is established yet.
 
-### Option 2: YOLO Object Detection
+## Integration
 
-Pros:
-- More advanced
-- Can detect real-world objects
-- Better for research presentation
-
-Cons:
-- Requires more setup
-- Needs stronger computer for real-time performance
-
-### Option 3: ArUco or AprilTag Tracking
-
-Pros:
-- Very accurate
-- Great for robotics
-- Easy to measure position
-
-Cons:
-- Requires printed markers
-- Less “AI-looking” than YOLO
-
-## Current Decision
-
-Start with OpenCV or ArUco tracking first, then upgrade to YOLO later.
-
-## Success Criteria
-
-The system should be able to:
-
-- Open webcam video
-- Detect the target
-- Draw a box or marker around it
-- Track its center position
-- Output whether the target is left, right, center, closer, or farther
+Publish timestamped observations and validity state for a future simulation interface. The current virtual-center overlay is not a closed-loop flight or camera simulation. Complete the repairs and baseline measurements before integration.

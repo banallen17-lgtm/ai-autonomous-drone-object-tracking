@@ -63,3 +63,13 @@ Each time I work on the project, I will record:
 * What failed: Some experimental versions of the gimbal logic caused camera over-rotation, duplicated reacquisition logic, and confusing search behavior. The simulation needed several debugging iterations to cleanly separate drone movement, camera movement, target memory, and heading control.
 * What I learned: A realistic autonomous tracking system requires more than pursuit logic. The drone needs memory, search behavior, target identity persistence, and a camera control layer. I also learned that a camera gimbal should be modeled separately from the drone body because real drones often track targets with the camera before the drone fully turns.
 * Next step: Continue improving the camera gimbal simulation, then move into servo control simulation. After the gimbal and servo logic are stable, begin building a 3D PyBullet simulation.
+
+## Repository review: September 16, 2026
+
+- Goal: Establish the current project baseline and prioritize cleanup.
+- Evidence: Local main and GitHub main matched commit 9a824be; the working tree was clean before cleanup. Git integrity checks and syntax parsing of the six existing Python scripts passed.
+- Latest implementation: Advanced simulation with velocity prediction and revised YOLO-CSRT tracker loss handling.
+- Repository changes: Updated README, roadmap, architecture, and tracking plan; documented primary versus historical scripts; repaired demo links; added ignore rules, contribution guidance, and repository checks.
+- Known issues: Simulation target-state reset, duplicated search rotation, reacquisition camera behavior, visibility/control separation, and frame-based timing. Vision needs dependency cleanup, bounded reacquisition, explicit validity states, and reset/timing fixes.
+- Validation limit: This review did not run a live camera or interactive simulation and does not establish performance measurements.
+- Next step: Validate dependency setup, then repair simulation and vision behavior with repeatable tests before refinement and integration.
