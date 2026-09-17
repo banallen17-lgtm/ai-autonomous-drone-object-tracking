@@ -17,3 +17,19 @@ jobs:
           python-version: '3.12'
       - name: Check syntax and documentation links
         run: python -B tools/check_repository.py
+
+  environment:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-windows-py312.txt
+      - name: Install pinned runtime with contrib OpenCV
+        run: |
+          python -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install --no-deps --only-binary=:all: -r vision/object_detection/requirements.txt
+      - name: Validate dependencies and vision APIs without a camera
+        run: .\.venv\Scripts\python.exe -B tools/check_environment.py

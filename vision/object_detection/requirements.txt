@@ -1,2 +1,4 @@
-ultralytics
-opencv-python
+# Windows x64 / Python 3.12. Required command:
+# python -m pip install --no-deps --only-binary=:all: -r vision/object_detection/requirements.txt
+# See docs/dependencies.md for the explicit OpenCV substitution.
+-r ../../requirements-windows-py312.txt

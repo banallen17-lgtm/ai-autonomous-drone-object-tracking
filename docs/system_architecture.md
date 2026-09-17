@@ -40,7 +40,7 @@ The simulator uses world coordinates directly; it does not infer positions from 
 - Camera capture, tracking, control indications, and display share a top-level loop.
 - Simulation dynamics, perception, decision logic, and rendering share a top-level loop.
 - Quantitative experiment logging and behavioral regression tests are pending.
-- CSRT dependency setup requires cleanup and fresh-environment validation.
+- The Windows x64 / Python 3.12 dependency snapshot passes isolated CSRT and YOLO CPU checks; live camera and interactive launch validation remain pending. See [dependency setup](dependencies.md).
 
 ## Planned integration
 

@@ -8,7 +8,7 @@ The current default target is a cell phone. Alternative non-human objects or mar
 
 ## Repair priorities
 
-1. Resolve OpenCV dependency overlap and verify CSRT in a fresh environment.
+1. Dependency baseline established: the pinned Windows x64 / Python 3.12 environment uses contrib OpenCV alone and passes CSRT and YOLO CPU smoke checks. Live camera validation remains pending; see [dependency setup](dependencies.md).
 2. Separate observed, predicted, lost, and searching states.
 3. Gate reacquisition so a distant same-class detection is not automatically accepted.
 4. Account for elapsed time and limit stale prediction use.

@@ -19,9 +19,10 @@ Baseline: September 16, 2026, commit `9a824be`. Checked items indicate existing 
 - [x] Identify primary scripts and distinguish historical versions.
 - [x] Update README links and current progress.
 - [x] Add ignore rules and lightweight repository checks.
-- [ ] Resolve OpenCV package overlap and define reproducible dependencies.
+- [x] Resolve OpenCV package overlap and define a pinned Windows x64 / Python 3.12 dependency snapshot.
+- [x] Install in an isolated environment and pass CSRT, Kalman, and YOLO CPU smoke checks.
 - [ ] Validate installation and documented launch commands in a fresh environment.
-- [ ] Record model weight provenance and download/version policy.
+- [x] Record the tracked model checksum, missing upstream provenance, and Git restoration policy.
 
 Acceptance: a new checkout has accurate documentation, passes repository checks, and can launch the primary demos using a documented, validated environment.
 
@@ -42,7 +43,7 @@ Acceptance: target switching cannot reuse old target state; lost targets cannot 
 
 Primary file: [yolo_tracking.py](../vision/object_detection/yolo_tracking.py).
 
-- [ ] Resolve and verify CSRT dependencies in a clean environment.
+- [x] Resolve and verify CSRT dependencies in an isolated environment.
 - [ ] Add explicit observed, predicted, lost, and searching states.
 - [ ] Reject implausible reacquisition candidates.
 - [ ] Use elapsed time in prediction and virtual movement.

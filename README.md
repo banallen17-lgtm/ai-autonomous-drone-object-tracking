@@ -36,22 +36,17 @@ Historical simulation paths remain available. Use the advanced script for new si
 
 ## Run locally
 
-The current camera scripts use Windows DirectShow. Run commands from the repository root so `yolov8n.pt` resolves correctly. Python 3.12 is the inspected development version; a clean installation has not yet been validated.
+The current camera scripts use Windows DirectShow. Run commands from the repository root so `yolov8n.pt` resolves correctly. The dependency snapshot targets Windows x64 and Python 3.12 with CPU inference.
 
 Create an isolated environment without changing the system Python installation:
 
 ```powershell
 py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r vision/object_detection/requirements.txt
+.\.venv\Scripts\python.exe -m pip install --no-deps --only-binary=:all: -r vision/object_detection/requirements.txt
+.\.venv\Scripts\python.exe -B tools/check_environment.py
 ```
 
-**Known dependency issue:** the existing requirements are unpinned and specify regular OpenCV, while the tracker requires CSRT support. Dependency cleanup and a clean-environment install test remain open. Do not treat this installation as a validated tracker environment. The inspected developer installation contains both regular and contrib OpenCV packages; that overlap needs resolution in the vision setup task.
-
-Check whether the selected environment exposes CSRT before running the tracker:
-
-```powershell
-.\.venv\Scripts\python.exe -c "import cv2; print('CSRT available:', hasattr(cv2, 'TrackerCSRT_create') or hasattr(getattr(cv2, 'legacy', None), 'TrackerCSRT_create'))"
-```
+The complete pinned snapshot uses only `opencv-contrib-python`, which supplies CSRT and desktop display support. **Keep `--no-deps` in the install command:** ordinary Ultralytics dependency resolution would install a conflicting regular OpenCV package. The environment check validates the explicit substitution and exercises CSRT and YOLO without opening a camera. See [dependency setup](docs/dependencies.md) for the expected `pip check` metadata warning, supported platform, and upgrade procedure.
 
 Run one demo at a time:
 
@@ -66,7 +61,7 @@ Run one demo at a time:
 - Camera index defaults to `0`. Use the diagnostic script to inspect camera availability.
 - Camera/model settings currently live inside the scripts; command-line configuration is planned.
 
-The existing YOLO weight file is retained to preserve the current launch path. Model download/version provenance will be documented during dependency cleanup.
+The existing YOLO weight file is retained to preserve the current launch path. Its checksum and the limits of its recorded provenance are documented in [dependency setup](docs/dependencies.md).
 
 ## Progress and evidence
 

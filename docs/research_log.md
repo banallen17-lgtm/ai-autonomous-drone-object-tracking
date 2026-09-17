@@ -73,3 +73,13 @@ Each time I work on the project, I will record:
 * What failed: The review identified simulation issues with target-state reset, duplicated search rotation, reacquisition camera behavior, visibility/control separation, and frame-based timing. The vision system still needs dependency cleanup, bounded reacquisition, explicit validity states, and reset/timing fixes.
 * What I learned: The project has separate simulation and vision prototypes, and both need a reliable, repeatable baseline before further refinement and integration. Repository and syntax checks do not establish tracking performance; this review did not run a live camera or interactive simulation.
 * Next step: Validate dependency setup, then repair simulation and vision behavior with repeatable tests before refinement and integration.
+
+## Entry 7
+
+* Date: 9/16/2026
+* Goal: Establish an isolated, reproducible dependency baseline for simulation and vision development.
+* What I did: Created a project virtual environment, pinned the Windows x64 / Python 3.12 runtime packages, replaced overlapping OpenCV distributions with contrib alone, and added dependency and vision API checks. Documented installation, the explicit package substitution, and the existing model checksum. Added Windows environment validation to the repository workflow.
+* What worked: Installation completed in the isolated environment. Pinned versions and active dependencies passed validation, CSRT initialized and updated on a synthetic textured frame, the Kalman API constructed successfully, and the tracked YOLOv8 model completed CPU inference. The system Python installation was unchanged.
+* What failed: The first dependency check caught a missing setuptools requirement from PyTorch; adding its pinned version resolved it. Standard pip metadata still expects regular OpenCV for Ultralytics, so installation must retain --no-deps and validation must account explicitly for the contrib substitution.
+* What I learned: Contrib and regular OpenCV share the same cv2 files and should not coexist. A full dependency snapshot and API smoke checks are needed when substituting a package that the upstream dependency metadata names differently. These checks do not establish real-camera or tracking performance.
+* Next step: Fix the simulation target-state reset, camera search/reacquisition, visibility handling, timing, and boundaries, then address vision behavior and validate interactive launches.
