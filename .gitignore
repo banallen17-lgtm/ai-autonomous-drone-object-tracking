@@ -1,0 +1,33 @@
+# Python environments and caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+
+# Generated experiments and downloaded models
+runs/
+outputs/
+*.log
+*.pt
+*.onnx
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini

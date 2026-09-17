@@ -1,280 +1,113 @@
 # AI Autonomous Drone for Real-Time Object Tracking and 3D-Aware Navigation
 
-## Project Overview
+A research project exploring camera-based tracking of an assigned non-human object and autonomous following in a controlled environment.
 
-This project explores the design and development of an AI-assisted autonomous drone system capable of identifying, tracking, and following a selected non-human target in a controlled environment. The system will combine computer vision, drone control, sensor integration, and path planning to study how a low-cost drone can perform real-time object tracking and navigation.
+**Current stage:** separate live-camera vision and 2D simulation prototypes. The latest implementation baseline is commit `9a824be` (September 16, 2026). The immediate priority is repository cleanup, followed by simulation and vision correctness, repeatable evaluation, and refinement.
 
-The goal is not to create a surveillance weapon or privacy-invasive system, but to build a safe research prototype for autonomous navigation, perception, and robotics experimentation.
+## What works today
 
-## Main Objective
+- USB-camera object detection with YOLOv8.
+- Cell-phone acquisition with YOLO, frame-to-frame CSRT tracking, Kalman prediction, and virtual movement indications.
+- A 2D multi-target simulation with manual target selection, field-of-view limits, following distance, separate camera/body headings, target memory, and predicted search positions.
+- Research notes documenting development from June 5 through June 10, plus a September repository review.
 
-To build and test an AI-powered drone system that can:
+These are prototype capabilities recorded in code and research notes, not measured guarantees of tracking accuracy. The simulation does not run YOLO on rendered camera images. The vision overlay's virtual center is not a physical camera or flight simulation. No flight-controller connection is implemented.
 
-* Detect a selected object using computer vision
-* Track the object's movement in real time
-* Estimate the object's position relative to the drone
-* Plan basic movement paths toward or around the object
-* Avoid simple obstacles in a controlled testing environment
-* Collect performance data for research and science fair presentation
+## Repository map
 
-## Research Question
+| Path | Purpose |
+| --- | --- |
+| [simulation/drone_tracking_advanced.py](simulation/drone_tracking_advanced.py) | Primary simulation for the next fixes and refinements |
+| [simulation/simulation/drone_tracking_v2.py](simulation/simulation/drone_tracking_v2.py) | Earlier multi-target/gimbal prototype, retained for comparison |
+| [simulation/2d_drone_tracking_sim.py](simulation/2d_drone_tracking_sim.py) | Original single-target pursuit demo |
+| [vision/object_detection/yolo_tracking.py](vision/object_detection/yolo_tracking.py) | Primary live-camera tracker |
+| [vision/object_detection/webcam_yolo.py](vision/object_detection/webcam_yolo.py) | Detection-only demo |
+| [vision/object_detection/camera_test.py](vision/object_detection/camera_test.py) | Camera-index diagnostic |
+| [docs/roadmap.md](docs/roadmap.md) | Completed milestones and ordered next tasks |
+| [docs/system_architecture.md](docs/system_architecture.md) | Current components and planned integration |
+| [docs/research_log.md](docs/research_log.md) | Historical development notes |
+| [docs/hardware_selection.md](docs/hardware_selection.md) | Preliminary hardware options; not a purchase/build record |
+| [docs/project_proposal.md](docs/project_proposal.md) | Original research scope and hypothesis |
+| [docs/object_tracking_plan.md](docs/object_tracking_plan.md) | Vision repair and evaluation plan |
+| [docs/safety_ethics.md](docs/safety_ethics.md) | Controlled testing and project scope |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Change and validation workflow |
 
-How effectively can a low-cost autonomous drone use real-time computer vision and sensor-based navigation to track a selected object while maintaining stable and safe movement in a controlled environment?
+Historical simulation paths remain available. Use the advanced script for new simulation work.
 
-## Planned Features
+## Run locally
 
-### Minimum Viable Product
+The current camera scripts use Windows DirectShow. Run commands from the repository root so `yolov8n.pt` resolves correctly. Python 3.12 is the inspected development version; a clean installation has not yet been validated.
 
-* Object detection using camera input
-* Real-time object tracking
-* Drone simulation before physical testing
-* Basic autonomous movement toward a target
-* Manual override and emergency stop
-* Performance data collection
+Create an isolated environment without changing the system Python installation:
 
-### Advanced Goals
-
-* 3D mapping or depth estimation
-* Obstacle avoidance
-* Path planning
-* Integration with onboard compute hardware
-* Real-world indoor drone testing
-* Research paper and science fair submission
-
-## Tech Stack
-
-* Python
-* OpenCV
-* YOLO or another object detection model
-* ROS 2
-* Gazebo simulation
-* ArduPilot or PX4
-* Raspberry Pi or Jetson onboard computer
-* Camera module
-* IMU and flight controller sensors
-
-## Project Structure
-
-```text
-ai-autonomous-drone-object-tracking/
-│
-├── README.md
-├── docs/
-│   ├── project_proposal.md
-│   ├── roadmap.md
-│   ├── research_log.md
-│   └── safety_ethics.md
-│
-├── simulation/
-│   ├── gazebo/
-│   └── ros2_nodes/
-│
-├── vision/
-│   ├── object_detection/
-│   └── tracking/
-│
-├── navigation/
-│   ├── path_planning/
-│   └── obstacle_avoidance/
-│
-├── hardware/
-│   ├── parts_list.md
-│   ├── wiring_diagrams/
-│   └── build_photos/
-│
-├── experiments/
-│   ├── test_results/
-│   └── videos/
-│
-└── paper/
-    ├── outline.md
-    └── draft.md
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r vision/object_detection/requirements.txt
 ```
 
-## Current Status
+**Known dependency issue:** the existing requirements are unpinned and specify regular OpenCV, while the tracker requires CSRT support. Dependency cleanup and a clean-environment install test remain open. Do not treat this installation as a validated tracker environment. The inspected developer installation contains both regular and contrib OpenCV packages; that overlap needs resolution in the vision setup task.
 
-Project started. The first stage focuses on research, planning, simulation setup, GitHub documentation, and safe hardware selection.
+Check whether the selected environment exposes CSRT before running the tracker:
 
-## Milestone 1: Real-Time Object Detection
-
-Successfully implemented a real-time object detection pipeline using a USB Arducam and the YOLOv8 object detection model.
-
-## Results
-
-| Object Detection Demo |
-|----------------------|
-| ![](assets/yolo_detection_demo.png) |
-
-Detected objects:
-- Person
-- Bottle
-- Cell Phone
-
-### Features
-
-* Live video feed from external USB camera
-* Real-time object detection
-* Automatic bounding box generation
-* Object classification using pretrained YOLOv8
-
-### Technologies Used
-
-* Python
-* OpenCV
-* Ultralytics YOLOv8
-* Arducam USB Camera
-
-### Future Work
-
-* Object tracking
-* Target selection
-* Autonomous target following
-* Drone integration
-
-## Milestone 2: Target Tracking and Motion Prediction
-
-Successfully expanded the object detection pipeline into a target tracking system capable of selecting and following a specific object across multiple frames.
-
-The system automatically identifies a cell phone, assigns it as the target, predicts future target positions using a Kalman Filter, and provides directional guidance relative to the center of the camera frame.
-
-## Results
-
-| Target Tracking Demo                 |
-| ------------------------------------ |
-| ![](assets/tracking_prediction_demo.png) |
-
-### Features
-
-* Automatic target selection
-* Hybrid YOLO + CSRT tracking architecture
-* Kalman Filter motion prediction
-* Real-time target position estimation
-* Directional guidance system
-* Visual target persistence
-* Automatic target reacquisition
-* Reduced identity switching
-* Live camera visualization
-
-### Example Output
-
-```text
-Target selected: Cell Phone
-
-Target Center: (415, 228)
-Predicted Error X: 42, Y: -18
-
-MOVE RIGHT | CENTERED Y
+```powershell
+.\.venv\Scripts\python.exe -c "import cv2; print('CSRT available:', hasattr(cv2, 'TrackerCSRT_create') or hasattr(getattr(cv2, 'legacy', None), 'TrackerCSRT_create'))"
 ```
 
-### Technologies Used
+Run one demo at a time:
 
-* Python
-* OpenCV
-* Ultralytics YOLOv8
-* ByteTrack
-* Kalman Filters
-* NumPy
-
-### Challenges Encountered
-
-* Target identity loss during rapid motion
-* Motion blur affecting object detection
-* ByteTrack reassigning new IDs after occlusion
-* Kalman prediction drift during long target loss periods
-
-### Lessons Learned
-
-* Object detection and object tracking are fundamentally different problems
-* Kalman Filters improve stability but do not solve identity tracking
-* Multi-object trackers are susceptible to ID switching
-* Robust tracking requires combining detection, tracking, prediction, and re-identification
-
-### Future Work
-
-* CSRT visual tracker integration
-* Appearance-based target re-identification
-* High-speed target tracking improvements
-* Target tracking under occlusion
-* Simulation-based testing environment
-* Drone control system integration
-
-## Milestone 3: Autonomous Drone Tracking Simulation
-
-Developed a simulation environment to evaluate autonomous target tracking behavior before physical drone deployment.
-
-The simulation models a drone tracking moving targets using vision constraints, tracking confidence, target selection logic, and autonomous pursuit behavior. Multiple targets can exist simultaneously, allowing the drone to select and maintain lock on a specific target while ignoring distractions.
-
-## Results
-
-| Autonomous Drone Simulation           |
-| ------------------------------------- |
-| ![](assets/drone_simulation_demo.png) |
-
-### Features
-
-* Autonomous target following
-* Target lock maintenance
-* Configurable follow distance
-* Search and reacquisition behavior
-* Camera field-of-view simulation
-* Vision radius constraints
-* Tracking confidence system
-* Target evasion behavior
-* Multi-target environment
-* Persistent target selection
-
-### Example Behaviors
-
-```text
-Target detected
-↓
-Target selected
-↓
-Drone tracks target
-↓
-Target leaves field of view
-↓
-Drone searches
-↓
-Target reacquired
+```powershell
+.\.venv\Scripts\python.exe simulation/drone_tracking_advanced.py
+.\.venv\Scripts\python.exe vision/object_detection/webcam_yolo.py
+.\.venv\Scripts\python.exe vision/object_detection/yolo_tracking.py
 ```
 
-### Technologies Used
+- Simulation: `q` quits; `0`, `1`, or `2` selects a target.
+- Tracker: `q` quits; `p` pauses/resumes; `r` resets while running.
+- Camera index defaults to `0`. Use the diagnostic script to inspect camera availability.
+- Camera/model settings currently live inside the scripts; command-line configuration is planned.
 
-* Python
-* OpenCV
-* NumPy
-* State-Based Control Logic
-* Autonomous Tracking Algorithms
+The existing YOLO weight file is retained to preserve the current launch path. Model download/version provenance will be documented during dependency cleanup.
 
-### Challenges Encountered
+## Progress and evidence
 
-* Designing realistic autonomous behavior
-* Implementing search and reacquisition states
-* Managing target selection in multi-target environments
-* Balancing tracking aggressiveness with follow distance constraints
+1. **June 2026: detection.** USB-camera YOLO detection demonstrated and documented.
+2. **June 2026: tracking.** ByteTrack experiments progressed to YOLO + CSRT + Kalman tracking.
+3. **June 2026: simulation.** Pursuit expanded into multi-target tracking, memory, reacquisition, and camera/body heading separation.
+4. **September 16, 2026: latest code update.** Added the advanced simulation with velocity prediction; revised tracker loss handling and optional YOLO correction.
 
-### Lessons Learned
+Historical detection screenshot:
 
-* Tracking a target and controlling a vehicle are fundamentally different challenges
-* Autonomous systems require state management beyond simple tracking
-* Target selection and persistence are critical for multi-object environments
-* Simulation provides a safe environment for validating autonomy algorithms before hardware deployment
+![YOLO detection demo](assets/yolo_detection_demo.png)
 
-### Future Work
+Historical tracking screenshot (not a validation of the latest tracker):
 
-* Target memory and advanced reacquisition logic
-* Multi-target prioritization
-* Threat and importance scoring systems
-* 3D simulation using PyBullet
-* Integration with the real YOLO-CSRT tracking pipeline
-* Physical drone implementation
+![Target tracking demo](assets/target_tracking_demo.jpg)
 
+No simulation screenshot is currently tracked. Performance datasets, automated behavioral tests, and hardware flight results are not yet included.
 
-## Safety and Ethics
+## Next milestone
 
-This project will focus on tracking assigned non-human objects in controlled environments. Human face recognition and privacy-invasive surveillance will not be used as the main demonstration. All testing will include manual override, safe flight boundaries, and controlled indoor or approved outdoor environments.
+Establish a reliable baseline before adding features:
 
-## Long-Term Goal
+1. Complete repository setup and dependency reproducibility.
+2. Repair simulation target resets, search/gimbal behavior, visibility handling, timing, and boundaries.
+3. Repair vision reacquisition, prediction/control validity, reset behavior, and configurable inputs.
+4. Add repeatable scenarios and recorded-video evaluation with quantitative metrics.
+5. Define a shared observation/control interface before connecting vision to simulation.
 
-By the end of the summer, the goal is to produce a working prototype or simulation-supported system, collect experimental results, write a research paper, and prepare the project for science fair submission.
+See the [roadmap](docs/roadmap.md) for acceptance criteria. 3D simulation, obstacle avoidance, ROS 2/Gazebo, onboard computing, and physical drone integration are future work.
+
+## Repository checks
+
+```powershell
+python -B tools/check_repository.py
+git diff --check
+```
+
+These checks validate Python syntax and relative Markdown file links without importing camera scripts or downloading models. They do not validate tracking behavior. GitHub Actions runs the same repository check.
+
+## Research goal
+
+How effectively can a low-cost autonomous drone use real-time computer vision and sensor-based navigation to track a selected object while maintaining stable movement in a controlled environment?
+
+Testing follows the [safety and ethics plan](docs/safety_ethics.md). The intended outcome is a validated prototype or simulation-supported demonstration, experimental results, and research presentation materials. The original summer target remains historical; a revised delivery date has not been set.
