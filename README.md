@@ -2,14 +2,14 @@
 
 A research project exploring camera-based tracking of an assigned non-human object and autonomous following in a controlled environment.
 
-**Current stage:** separate live-camera vision and 2D simulation prototypes. The latest implementation baseline is commit `9a824be` (September 16, 2026). The immediate priority is repository cleanup, followed by simulation and vision correctness, repeatable evaluation, and refinement.
+**Current stage:** separate live-camera vision and 2D simulation prototypes. The latest implementation baseline is commit `9a824be` (September 16, 2026). Repository cleanup and the dependency baseline are established. Simulation refinement is underway; consistent timing, prediction, movement correctness, and vision refinement precede integration.
 
 ## What works today
 
 - USB-camera object detection with YOLOv8.
 - Cell-phone acquisition with YOLO, frame-to-frame CSRT tracking, Kalman prediction, and virtual movement indications.
 - A 2D multi-target simulation with manual target selection, field-of-view limits, following distance, separate camera/body headings, target memory, and predicted search positions.
-- Research notes documenting development from June 5 through June 10, plus a September repository review.
+- Research notes covering June development, September repository/dependency cleanup, and September 18 simulation refinement.
 
 These are prototype capabilities recorded in code and research notes, not measured guarantees of tracking accuracy. The simulation does not run YOLO on rendered camera images. The vision overlay's virtual center is not a physical camera or flight simulation. No flight-controller connection is implemented.
 
@@ -68,7 +68,9 @@ The existing YOLO weight file is retained to preserve the current launch path. I
 1. **June 2026: detection.** USB-camera YOLO detection demonstrated and documented.
 2. **June 2026: tracking.** ByteTrack experiments progressed to YOLO + CSRT + Kalman tracking.
 3. **June 2026: simulation.** Pursuit expanded into multi-target tracking, memory, reacquisition, and camera/body heading separation.
-4. **September 16, 2026: latest code update.** Added the advanced simulation with velocity prediction; revised tracker loss handling and optional YOLO correction.
+4. **September 16, 2026: simulation and tracker update.** Added the advanced simulation with velocity prediction; revised tracker loss handling and optional YOLO correction.
+
+5. **September 18, 2026: simulation refinement.** Added an import-safe entry point and visibility helper, complete target resets, visibility-gated tracking, camera recovery scanning, tracking-driven evasion with a two-second cooldown, and wall steering. Preferred tuning is recorded in [Entry 7](docs/research_log.md#entry-7); timing and physics refinements remain pending.
 
 Historical detection screenshot:
 

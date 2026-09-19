@@ -31,14 +31,14 @@ Synthetic target movement
 
 [drone_tracking_advanced.py](../simulation/drone_tracking_advanced.py) is the primary simulation. The earlier [gimbal prototype](../simulation/simulation/drone_tracking_v2.py) and [pursuit demo](../simulation/2d_drone_tracking_sim.py) remain historical references.
 
-The simulator uses world coordinates directly; it does not infer positions from camera images. Visibility and controller state are not yet cleanly separated, which is a priority correctness fix. Motion and timers currently advance per frame.
+The simulator uses world coordinates directly; it does not infer positions from camera images. Current visibility now gates tracking and direct camera aiming. A visibility helper is separate from the main loop, but a full observation/controller interface remains pending. Motion and most timers advance per frame; bird evasion cooldown uses elapsed seconds.
 
 ## Current limitations
 
 - No shared interface connects vision and simulation.
 - No depth estimation, obstacle avoidance, 3D physics, ROS 2/Gazebo nodes, or hardware control is implemented.
 - Camera capture, tracking, control indications, and display share a top-level loop.
-- Simulation dynamics, perception, decision logic, and rendering share a top-level loop.
+- Simulation dynamics, decision logic, and rendering still share the loop inside main(); the module can now be imported without launching the window.
 - Quantitative experiment logging and behavioral regression tests are pending.
 - The Windows x64 / Python 3.12 dependency snapshot passes isolated CSRT and YOLO CPU checks; live camera and interactive launch validation remain pending. See [dependency setup](dependencies.md).
 

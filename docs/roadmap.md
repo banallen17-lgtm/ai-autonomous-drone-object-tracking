@@ -1,6 +1,6 @@
 # Project Roadmap
 
-Baseline: September 16, 2026, commit `9a824be`. Checked items indicate existing code or documentation, not independently measured performance.
+Implementation baseline: September 16, 2026, commit `9a824be`; simulation progress updated September 18, 2026. Checked items indicate existing code or documentation, not independently measured performance.
 
 ## Completed prototype milestones
 
@@ -30,8 +30,11 @@ Acceptance: a new checkout has accurate documentation, passes repository checks,
 
 Primary file: [drone_tracking_advanced.py](../simulation/drone_tracking_advanced.py).
 
-- [ ] Clear all observation, velocity, and prediction state on target changes.
-- [ ] Remove duplicate search rotation and restore camera scanning during reacquisition.
+- [x] Clear all observation, velocity, and prediction state on target changes.
+- [x] Remove duplicate search rotation and restore camera scanning during reacquisition.
+- [x] Require current visibility for tracking and camera aim at the true target position.
+- [x] Add tracking-driven evasion, a two-second cooldown, total-speed limits, and wall steering.
+- [x] Add an import-safe main entry point and a separately callable visibility helper.
 - [ ] Separate true world state from observations available to the controller.
 - [ ] Handle elapsed time and observation gaps correctly.
 - [ ] Apply consistent control/physics ordering and enforce world boundaries.

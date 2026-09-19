@@ -73,3 +73,32 @@ Each time I work on the project, I will record:
 * What failed: The review identified simulation issues with target-state reset, duplicated search rotation, reacquisition camera behavior, visibility/control separation, frame-based timing, and boundaries. Vision still needs bounded reacquisition, explicit validity states, and reset/timing fixes. The first dependency check caught a missing setuptools requirement from PyTorch; adding its pinned version resolved it. Standard pip metadata still expects regular OpenCV for Ultralytics, so installation must retain --no-deps and validation must explicitly account for the contrib substitution.
 * What I learned: The simulation and vision prototypes need a repeatable baseline before refinement and integration. Regular and contrib OpenCV share the same cv2 files and should not coexist, so the project needs a complete dependency snapshot and API smoke checks. Repository, syntax, and synthetic-input checks do not establish tracking performance; live camera and interactive simulation testing remain pending.
 * Next step: Fix simulation target-state reset, camera search/reacquisition, visibility handling, timing, and boundaries with repeatable tests, then address vision behavior and validate interactive launches before refinement and integration.
+
+## Entry 7
+
+* Date: 9/18/2026
+* Goal: Refine the 2D simulation's target tracking, camera recovery, and bird behavior before connecting it to the vision pipeline.
+* What I did: Moved the simulation into main() with a direct-run guard and extracted a visibility helper. Cleared target-specific observation and prediction state on selection changes, required current visibility for tracking, removed duplicate camera rotation, and added camera scanning around remembered positions. Changed bird evasion to follow tracking with a two-second cooldown after loss, limited total bird speed, and added steering away from walls while retaining the boundary bounce. Tuned the simulation interactively and kept the preferred settings as the current baseline.
+* What worked: The simulation felt better during manual experimentation. Visibility checks passed for targets ahead, behind, at the range limit, and beyond it. A seeded 300-frame non-interactive smoke run completed with two target switches and normal shutdown; repository syntax and documentation-link checks also passed. This smoke run confirms execution, not quantitative recovery performance.
+* What failed: Immediate slowdown after tracking loss previously allowed rapid recapture, and abrupt wall bounces made the slower camera lose the target. The cooldown and wall steering address these behaviors, but fallback bounces remain possible. Motion, camera scanning, and memory still use frame-based timing while the cooldown uses elapsed seconds. Prediction across observation gaps, control/physics ordering, and drone world boundaries still need work.
+* What I learned: Smooth target behavior and limited camera motion need to be tuned together. A short evasion delay avoids immediately alternating between escape and normal movement. The current speed and acceleration settings are simulation values, not calibrated physical units, and enjoyable behavior does not establish realistic flight dynamics.
+* Next step: Preserve this baseline, then introduce consistent simulation timing and improve prediction, movement ordering, and drone boundaries with repeatable tests before refining vision and integration.
+
+### Saved settings
+
+| Setting | Value |
+| --- | --- |
+| Window | 1700 x 1000 pixels |
+| Drone maximum speed | 5.5 pixels/update |
+| Drone acceleration coefficient | 0.08 |
+| Friction multiplier | 0.98/update |
+| Camera turn limit | 0.03 radians/update |
+| Camera field of view | 40 degrees |
+| Vision radius / follow distance | 500 / 150 pixels |
+| Body turn limit | 0.05 radians/update |
+| Bird normal / escape speed limits | 3.2 / 5.6 pixels/update |
+| Evasion cooldown | 2 seconds |
+| Memory timeout | 100 updates |
+| Search movement radius / tangential coefficient | 300 / 0.3 |
+| Recovery approach acceleration multiplier | 0.2 |
+| Wall steering margin / strength | 120 pixels / 0.8 |
